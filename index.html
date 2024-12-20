@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Decrypt Your Birthday Message</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1-crypto-js.js"></script>
     <style>
         /* General Page Styling */
         body {
@@ -12,7 +14,7 @@
             padding: 0;
             background-color: #ffe6f2;
             color: #343a40;
-            overflow-x: hidden; /* Prevent horizontal scroll due to confetti */
+            overflow-x: hidden;
         }
 
         /* Header Section */
@@ -32,7 +34,6 @@
             display: inline-block;
         }
 
-        /* Zoha Text Styling */
         .zoha-text {
             font-size: 2.5em;
             font-weight: bold;
@@ -43,9 +44,11 @@
             0% {
                 transform: rotateY(0deg);
             }
+
             50% {
                 transform: rotateY(180deg);
             }
+
             100% {
                 transform: rotateY(360deg);
             }
@@ -60,7 +63,7 @@
         /* Content Section */
         .container {
             position: relative;
-            z-index: 10; /* Ensure this stays above confetti */
+            z-index: 10;
             max-width: 800px;
             margin: 40px auto;
             text-align: center;
@@ -70,15 +73,14 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
-        textarea {
+        textarea,
+        input[type="password"] {
             width: 100%;
-            height: 120px;
             margin-top: 20px;
             font-size: 1em;
             padding: 10px;
             border: 1px solid #ced4da;
             border-radius: 5px;
-            resize: none;
         }
 
         button {
@@ -92,6 +94,14 @@
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            display: inline-flex;
+            /* Use inline-flex to center the content */
+            justify-content: center;
+            /* Centers the text horizontally */
+            align-items: center;
+            /* Centers the text vertically */
+            text-align: center;
+            /* Ensures text is aligned in the center */
         }
 
         button:hover {
@@ -110,82 +120,174 @@
             border: 1px solid #dee2e6;
         }
 
+        .decoded-message {
+            text-align: left;
+            /* Left-align only the decoded message */
+            display: block;
+            /* Ensures that the text is aligned correctly if the span is inline */
+        }
+
         /* Footer */
         .footer {
-            margin-top: 40px;
-            color: #868e96;
-            font-size: 0.9em;
+            display: flex;
+            justify-content: center;
+            /* Centers horizontally */
+            align-items: center;
+            /* Centers vertically */
+            height: 100px;
+            /* Optional height to control the footer size */
+            text-align: center;
+            /* Ensures the text is centered within the <p> */
+            padding: 20px;
         }
 
-        /* Confetti Animation */
+        .footer p {
+            margin: 0;
+            /* Removes default margin of <p> tag */
+        }
+
+        /* Password Prompt */
+        #passwordPrompt {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #ffe6f2;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #passwordPrompt input {
+            width: 300px;
+            margin-bottom: 20px;
+        }
+
+        #passwordPrompt button {
+            width: 100px;
+        }
+
+        /* Confetti Styling */
         .confetti {
-            position: fixed;
+            position: absolute;
+            top: 0;
+            left: 50%;
             width: 10px;
             height: 10px;
-            background: pink;
-            border-radius: 50%;
-            opacity: 0.3; /* Reduce opacity */
-            animation: fall 5s linear infinite;
-            z-index: 1; /* Confetti stays below the main containers */
-            pointer-events: none; /* Confetti doesn't block interaction */
+            background-color: #ff6347;
+            animation: confetti-fall 3s ease-in infinite;
         }
 
-        @keyframes fall {
-            from {
-                transform: translateY(-100px) translateX(0);
-                opacity: 0.5;
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
             }
-            to {
-                transform: translateY(100vh) translateX(50px);
-                opacity: 0.1;
+
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
             }
         }
     </style>
 </head>
+
 <body>
-    <div class="header">
-        <div class="rotating-text">🎉 Happy Birthday, </div>
-        <div class="zoha-text">Zoha!</div>
-        <p>Here's a special message waiting for you!</p>
+    <!-- Password Prompt Screen -->
+    <div id="passwordPrompt">
+        <div style="text-align: center;">
+            <h2>Enter Password to Access Your Message</h2>
+            <input type="password" id="passwordInput" placeholder="Enter password..." />
+            <br>
+            <button onclick="checkPassword()">Submit</button>
+            <div id="confettiContainer"></div> <!-- Confetti container -->
+        </div>
     </div>
 
-    <div class="container">
-        <h2>Decrypt Your Special Message</h2>
-        <p>Paste the encrypted text from the QR code below and click "Decrypt" to reveal your surprise!</p>
-        <textarea id="encryptedText" placeholder="Paste encrypted text here..."></textarea>
-        <br>
-        <button onclick="decryptMessage()">Decrypt</button>
-        <div id="output" class="output"></div>
-    </div>
+    <!-- Main Content Section (Hidden until password is correct) -->
+    <div id="mainContent" style="display: none;">
+        <div class="header">
+            <div class="rotating-text">💝🎉 Happy Birthday 💝🎉</div>
+            <div class="zoha-text">💕 Zoha 💕</div>
+            <p>Here's a special message waiting for you! 💘</p>
+        </div>
 
-    <div class="footer">
-        <p>&copy; 2024 | A heartfelt gift by Muhammad Haris</p>
+        <div class="container">
+            <h2>❤️ Decrypt Your Special Message ❤️</h2>
+            <p>Baba, enter the secret code below and unlock your special message. It's waiting just for you, filled with
+                all my love! ❤️❤️❤️</p>
+            <textarea id="encryptedText" placeholder="Paste encrypted text here..."></textarea>
+            <br>
+            <button onclick="decryptMessage()">I accept that Haris my husband loves me more ❤️😂😂😂❤️</button>
+            <div id="output" class="output"></div>
+        </div>
+
+        <div class="footer">
+            <p>A heartfelt letter by your husband Muhammad Haris Muccadam ❤️❤️</p>
+        </div>
     </div>
 
     <script>
+        const correctPassword = "1";  // The password to unlock the page
+
+        // Function to start confetti animation
+        function startConfetti() {
+            const confettiContainer = document.getElementById('confettiContainer');
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = `${Math.random() * 100}vw`;  // Random horizontal position
+                confetti.style.animationDelay = `${Math.random() * 5}s`;  // Random animation delay
+                confettiContainer.appendChild(confetti);
+            }
+        }
+
+        // Function to stop confetti when the user enters the password
+        function stopConfetti() {
+            const confettiContainer = document.getElementById('confettiContainer');
+            confettiContainer.innerHTML = ''; // Clear existing confetti
+        }
+
+        // Check entered password
+        function checkPassword() {
+            const enteredPassword = document.getElementById('passwordInput').value;
+
+            if (enteredPassword === correctPassword) {
+                document.getElementById('passwordPrompt').style.display = 'none';  // Hide password prompt
+                document.getElementById('mainContent').style.display = 'block';  // Show main content
+                stopConfetti();  // Stop confetti animation after successful login
+            } else {
+                alert('Incorrect password. Please try again.');
+            }
+        }
+
+        // Decrypt message
         function decryptMessage() {
             const encryptedText = document.getElementById('encryptedText').value;
+            const password = document.getElementById('passwordInput').value;
+
+            if (!encryptedText || !password) {
+                document.getElementById('output').innerText = "Please enter the secret text to unlock my heartfelt words 💖";
+                return;
+            }
+
             try {
-                const decodedMessage = atob(encryptedText); // Base64 decoding
-                document.getElementById('output').innerText = "Your Message:\n\n" + decodedMessage;
+                // Decode the base64 encoded text
+                const decodedMessage = atob(encryptedText);  // Base64 decode
+                document.getElementById('output').innerHTML =
+                    "Love letter from your husband:<br>❤️Haris❤️<br><br>" +
+                    "<span class='decoded-message'>" + decodedMessage + "</span>";
             } catch (e) {
-                document.getElementById('output').innerText = "Invalid encrypted text. Please try again.";
+                document.getElementById('output').innerText = "Kuch masla hogaya hai shayad, msg karo mujhe 😂😂😂";
             }
         }
 
-        // Generate Confetti Animation
-        function createConfetti() {
-            for (let i = 0; i < 100; i++) {
-                const confetti = document.createElement("div");
-                confetti.className = "confetti";
-                confetti.style.left = Math.random() * window.innerWidth + "px";
-                confetti.style.animationDelay = Math.random() * 5 + "s";
-                confetti.style.background = `hsl(${Math.random() * 360}, 100%, 75%)`;
-                document.body.appendChild(confetti);
-            }
-        }
+        // Start confetti animation when the page loads
+        window.onload = startConfetti;
 
-        window.onload = createConfetti; // Trigger confetti animation on page load
     </script>
 </body>
+
 </html>
